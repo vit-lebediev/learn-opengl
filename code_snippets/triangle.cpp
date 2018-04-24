@@ -31,7 +31,7 @@ const char* fragmentShaderSource = R"glsl(
     void main() {
         // outColor = vec4(Color.r, Color.g, Color.b, 1.0);
         // outColor = vec4(1.0 - Color.r, 1.0 - Color.g, 1.0 - Color.b, 1.0);
-        outColor = vec4(1.0 - Color, 1.0);
+        outColor = vec4(Color.r, Color.r, Color.r, 1.0);
     }
 )glsl";
 
@@ -65,11 +65,18 @@ int main () {
     glBindVertexArray(vao);
 
     // Defining vertex data
-
+    /*
     float vertices[] = {
          0.0f,  0.5f, 1.0f, 0.0f, 0.0f, // Vertex 1: Red
          0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // Vertex 2: Green
         -0.5f, -0.5f, 0.0f, 0.0f, 1.0f  // Vertex 3: Blue
+    };
+    */
+
+    float vertices[] = {
+         0.0f,  0.5f, 0.2f, // Vertex 1: Shades of Gray
+         0.5f, -0.5f, 0.7f, // Vertex 2: Shades of Gray
+        -0.5f, -0.5f, 0.3f  // Vertex 3: Shades of Gray
     };
 
     /*
@@ -94,11 +101,11 @@ int main () {
     // Load vertex data to binded buffer
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    GLuint ebo; // Element Buffer Object
-    glGenBuffers(1, &ebo);
+    // GLuint ebo; // Element Buffer Object
+    // glGenBuffers(1, &ebo);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
 
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -158,13 +165,13 @@ int main () {
         2,         // number of values for input (number of components of vec) 
         GL_FLOAT,  // type of each component
         GL_FALSE,  // whether imput values should be normalized between -1.0 and 1.0
-        5 * sizeof(float), // stride (0 - no data between data attributes)
+        3 * sizeof(float), // stride (0 - no data between data attributes)
         0                  // offset (how many bytes from the start of the array the attributes occur)
     );
 
     GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
     glEnableVertexAttribArray(colAttrib);
-    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(colAttrib, 1, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(2 * sizeof(float)));
 
     GLint uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
     // glUniform3f(uniColor, 1.0f, 0.0f, 0.0f);
@@ -177,7 +184,7 @@ int main () {
         auto t_now = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
 
-        glUniform3f(uniColor, (sin(time * 4.0f) + 1.0f) / 2.0f, 0.0f, 0.0f);
+        // glUniform3f(uniColor, (sin(time * 4.0f) + 1.0f) / 2.0f, 0.0f, 0.0f);
 
         glDrawArrays(
             GL_TRIANGLES, // primitive (commonly point, line or triangle)

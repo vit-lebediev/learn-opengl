@@ -15,7 +15,8 @@ const char* vertexShaderSource = R"glsl(
 
     void main() {
         // gl_Position = vec4(position, 0.0, 1.0);
-        gl_Position = vec4(-1 * position.x, -1 * position.y, 0.0, 1.0);
+        // gl_Position = vec4(-1 * position.x, -1 * position.y, 0.0, 1.0);
+        gl_Position = vec4(-1 * position, 0.0, 1.0);
         Color = color;
     }
 )glsl";
@@ -28,7 +29,9 @@ const char* fragmentShaderSource = R"glsl(
     out vec4 outColor;
 
     void main() {
-        outColor = vec4(Color, 1.0);
+        // outColor = vec4(Color.r, Color.g, Color.b, 1.0);
+        // outColor = vec4(1.0 - Color.r, 1.0 - Color.g, 1.0 - Color.b, 1.0);
+        outColor = vec4(1.0 - Color, 1.0);
     }
 )glsl";
 

@@ -9,9 +9,9 @@ const char* vertexShaderSource = R"glsl(
     #version 150 core
 
     in vec2 position;
-    in vec3 color;
+    in float color;
 
-    out vec3 Color;
+    out float Color;
 
     void main() {
         // gl_Position = vec4(position, 0.0, 1.0);
@@ -24,14 +24,14 @@ const char* vertexShaderSource = R"glsl(
 const char* fragmentShaderSource = R"glsl(
     #version 150 core
 
-    in vec3 Color;
+    in float Color;
 
     out vec4 outColor;
 
     void main() {
         // outColor = vec4(Color.r, Color.g, Color.b, 1.0);
         // outColor = vec4(1.0 - Color.r, 1.0 - Color.g, 1.0 - Color.b, 1.0);
-        outColor = vec4(Color.r, Color.r, Color.r, 1.0);
+        outColor = vec4(Color, Color, Color, 1.0);
     }
 )glsl";
 

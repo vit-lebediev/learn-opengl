@@ -49,10 +49,22 @@ int main () {
     glewInit();
 
     // Defining vertex data
+    /*
     float vertices[] = {
          0.0f,  0.5f, 1.0f, 0.0f, 0.0f, // Vertex 1: Red
          0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // Vertex 2: Green
         -0.5f, -0.5f, 0.0f, 0.0f, 1.0f  // Vertex 3: Blue
+    };
+    */
+
+    float vertices[] = {
+        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // Top-left
+         0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // Top-right    
+         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right
+
+         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right
+        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, // Bottom-left
+        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f  // Top-left
     };
 
     GLuint vbo;
@@ -154,7 +166,15 @@ int main () {
 
         glUniform3f(uniColor, (sin(time * 4.0f) + 1.0f) / 2.0f, 0.0f, 0.0f);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        /*
+        glDrawArrays(
+            GL_TRIANGLES, // primitive (commonly point, line or triangle)
+            0,            // how many vertices to skip at the beginning
+            3             // number of vertices (not primitives!) to process
+        );
+        */
+
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
     }

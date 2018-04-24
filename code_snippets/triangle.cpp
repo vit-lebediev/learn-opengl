@@ -48,6 +48,18 @@ int main () {
     glewExperimental = GL_TRUE;
     glewInit();
 
+    GLuint vao; // Vertex Array Object
+    glGenVertexArrays(1, &vao);
+
+    // As soon as you've bound a certain VAO, every time you call 
+    // glVertexAttribPointer, that information will be stored in that VAO.
+    //
+    // Since only calls after binding a VAO stick to it, make sure 
+    // that you've created and bound the VAO at the start of your 
+    // program. Any vertex buffers and element buffers bound 
+    // before it will be ignored.
+    glBindVertexArray(vao);
+
     // Defining vertex data
     /*
     float vertices[] = {
@@ -61,20 +73,28 @@ int main () {
         -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // Top-left
          0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // Top-right    
          0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right
-
-         0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right
         -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, // Bottom-left
-        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f  // Top-left
     };
 
-    GLuint vbo;
+    GLuint elements[] = {
+        0, 1, 2,
+        2, 3, 0
+    };
+
+    GLuint vbo; // Vertex Buffer Object
     glGenBuffers(1, &vbo); // Generate 1 buffer
 
     // Bind Vertex Buffer Object 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
     // Load vertex data to binded buffer
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    GLuint ebo; // Element Buffer Object
+    glGenBuffers(1, &ebo);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+
 
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -121,18 +141,6 @@ int main () {
     // actually be removed before it has been detached from all programs 
     // with glDetachShader
     
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-
-    // As soon as you've bound a certain VAO, every time you call 
-    // glVertexAttribPointer, that information will be stored in that VAO.
-    //
-    // Since only calls after binding a VAO stick to it, make sure 
-    // that you've created and bound the VAO at the start of your 
-    // program. Any vertex buffers and element buffers bound 
-    // before it will be ignored.
-    glBindVertexArray(vao);
-
     // The location is a number depending on the order of the input definitions. 
     // The first and only input position in this example will always have location 0.
     GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
@@ -174,7 +182,7 @@ int main () {
         );
         */
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
     }

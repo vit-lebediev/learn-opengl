@@ -9,21 +9,25 @@ const char* vertexShaderSource = R"glsl(
     #version 150 core
 
     in vec2 position;
+    in vec3 color;
+
+    out vec3 Color;
 
     void main() {
         gl_Position = vec4(position, 0.0, 1.0);
+        Color = color;
     }
 )glsl";
 
 const char* fragmentShaderSource = R"glsl(
     #version 150 core
 
-    uniform vec3 triangleColor;
+    in vec3 Color;
 
     out vec4 outColor;
 
     void main() {
-        outColor = vec4(triangleColor, 1.0);
+        outColor = vec4(Color, 1.0);
     }
 )glsl";
 
@@ -46,9 +50,9 @@ int main () {
 
     // Defining vertex data
     float vertices[] = {
-         0.0f,  0.5f, // Vertex 1 (X, Y)
-         0.5f, -0.5f, // Vertex 2 (X, Y)
-        -0.5f, -0.5f  // Vertex 3 (X, Y)
+         0.0f,  0.5f, 1.0f, 0.0f, 0.0f, // Vertex 1: Red
+         0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // Vertex 2: Green
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f  // Vertex 3: Blue
     };
 
     GLuint vbo;
@@ -120,6 +124,7 @@ int main () {
     // The location is a number depending on the order of the input definitions. 
     // The first and only input position in this example will always have location 0.
     GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    glEnableVertexAttribArray(posAttrib);
 
     // This function also stores VBO currently bound to GL_ARRAY_BUFFER.
     // This means that with next invocation we can bind different buffer
@@ -128,11 +133,13 @@ int main () {
         2,         // number of values for input (number of components of vec) 
         GL_FLOAT,  // type of each component
         GL_FALSE,  // whether imput values should be normalized between -1.0 and 1.0
-        0,         // stride (0 - no data between data attributes)
-        0          // offset (how many bytes from the start of the array the attributes occur)
+        5 * sizeof(float), // stride (0 - no data between data attributes)
+        0                  // offset (how many bytes from the start of the array the attributes occur)
     );
 
-    glEnableVertexAttribArray(posAttrib);
+    GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
+    glEnableVertexAttribArray(colAttrib);
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
 
     GLint uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
     // glUniform3f(uniColor, 1.0f, 0.0f, 0.0f);

@@ -2,6 +2,7 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <SOIL.h>
 
 #include <iostream>
 #include <cmath>
@@ -11,12 +12,15 @@ const char *vertexShaderSource = R"glsl(
 
     in vec2 position;
     in vec3 color;
+    in vec2 texcoord;
 
     out vec3 Color;
+    out vec2 Texcoord;
 
     void main() {
         gl_Position = vec4(position, 0.0, 1.0);
         Color = color;
+        Texcoord = texcoord;
     }
 )glsl";
 
@@ -24,11 +28,14 @@ const char *fragmentShaderSource = R"glsl(
     #version 150 core
 
     in vec3 Color;
+    in vec2 Texcoord;
 
     out vec4 outColor;
 
+    uniform sampler2D tex;
+
     void main() {
-         outColor = vec4(Color, 1.0);
+         outColor = texture(tex, Texcoord) * vec4(Color, 1.0);
     }
 )glsl";
 
@@ -63,31 +70,41 @@ int main () {
 
   // Defining vertex data
   float vertices[] = {
-      -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, // Top-left
-      0.5f, 0.5f, 0.0f, 1.0f, 0.0f, // Top-right
-      0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right
-      -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, // Bottom-left
+//    Position      Color             Texcoords
+      -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
+       0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
+       0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
+      -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f  // Bottom-left
   };
+
+  GLuint vbo; // Vertex Buffer Object
+  glGenBuffers(1, &vbo); // Generate 1 buffer
+
+  glBindBuffer(GL_ARRAY_BUFFER, vbo); // Bind Vertex Buffer Object
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Load vertex data to binded buffer
+
+  GLuint ebo; // Element Buffer Object
+  glGenBuffers(1, &ebo);
 
   GLuint elements[] = {
       0, 1, 2,
       2, 3, 0
   };
 
-  GLuint vbo; // Vertex Buffer Object
-  glGenBuffers(1, &vbo); // Generate 1 buffer
-
-  // Bind Vertex Buffer Object
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  // Load vertex data to binded buffer
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-  GLuint ebo; // Element Buffer Object
-  glGenBuffers(1, &ebo);
-
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
+  GLuint tex;
+  glGenTextures(1, &tex);
+
+  glBindTexture(GL_TEXTURE_2D, tex);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+//  glGenerateMipmap(GL_TEXTURE_2D);
 
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
@@ -140,6 +157,12 @@ int main () {
   GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
   glEnableVertexAttribArray(posAttrib);
 
+  GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
+  glEnableVertexAttribArray(colAttrib);
+
+  GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
+  glEnableVertexAttribArray(texAttrib);
+
   // This function also stores VBO currently bound to GL_ARRAY_BUFFER.
   // This means that with next invocation we can bind different buffer
   glVertexAttribPointer(
@@ -147,22 +170,60 @@ int main () {
       2,         // number of values for input (number of components of vec)
       GL_FLOAT,  // type of each component
       GL_FALSE,  // whether imput values should be normalized between -1.0 and 1.0
-      5 * sizeof(float), // stride (0 - no data between data attributes)
-      nullptr            // offset (how many bytes from the start of the array the attributes occur)
+      7 * sizeof(GLfloat), // stride (length of each attributes sub-array, 0 - no data between data attributes)
+      nullptr              // offset (how many bytes from the start of each attributes "sub-array" the attributes occur)
   );
+  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (2 * sizeof(GLfloat)));
+  glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (5 * sizeof(GLfloat)));
 
-  GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
-  glEnableVertexAttribArray(colAttrib);
-  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (2 * sizeof(float)));
+  // Load image of a kitten as a texture
+  int width, height;
+  unsigned char *image = SOIL_load_image("../resources/images/kitten.png", &width, &height, nullptr, SOIL_LOAD_RGB);
 
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+  SOIL_free_image_data(image);
+
+  GLenum err;
+  std::string errorStr;
   while (!glfwWindowShouldClose(window)) {
     glfwSwapBuffers(window);
     glfwPollEvents();
 
+    // Clear the screen to black
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
+
+    // check for errors
+    while ((err = glGetError()) != GL_NO_ERROR) {
+      switch (err) {
+        case GL_INVALID_ENUM:      errorStr = "Invalid enum"; break;
+        case GL_INVALID_VALUE:     errorStr = "Invalid value"; break;
+        case GL_INVALID_OPERATION: errorStr = "Invalid operation"; break;
+        case GL_STACK_OVERFLOW:    errorStr = "Stack overflow"; break;
+        case GL_STACK_UNDERFLOW:   errorStr = "Stack underflow"; break;
+        case GL_OUT_OF_MEMORY:     errorStr = "Out of memory"; break;
+        default:                   errorStr = "Unknown error"; break;
+      }
+
+      std::cout << "GL Error: " << errorStr.c_str() << std::endl;
+    }
   }
+
+  glDeleteTextures(1, &tex);
+
+  glDeleteProgram(shaderProgram);
+  glDeleteShader(fragmentShader);
+  glDeleteShader(vertexShader);
+
+  glDeleteBuffers(1, &ebo);
+  glDeleteBuffers(1, &vbo);
+
+  glDeleteVertexArrays(1, &vao);
 
   glfwTerminate();
 

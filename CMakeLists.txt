@@ -4,10 +4,14 @@ set (CMAKE_CXX_STANDARD 11)
 
 project(learn_opengl)
 
-# Include GLFW
+# Include GLFW from source
 add_subdirectory("lib/glfw")
 include_directories("lib/glfw/include")
 
+add_subdirectory("lib/soil")
+include_directories("lib/soil/src")
+
+# finding dependency on the system, must be PREINSTALLED
 find_library(GLEW GLEW)
 if (NOT GLEW)
     message(FATAL_ERROR "GLEW Not found")
@@ -44,9 +48,5 @@ endif()
 file(GLOB SOURCES "src/*.cpp")
 add_executable (triangle ${SOURCES})
 
-target_link_libraries(triangle glfw ${GLFW_LIBRARIES} ${GLEW} ${COCOA} ${OPEN_GL} ${IO_KIT} ${CORE_VIDEO})
+target_link_libraries(triangle glfw ${GLFW_LIBRARIES} SOIL ${GLEW} ${COCOA} ${OPEN_GL} ${IO_KIT} ${CORE_VIDEO})
 
-# find_library(GLFW glfw3)
-# if (NOT GLWF)
-#     message(FATAL_ERROR "GLFW Not found")
-# endif()

@@ -8,35 +8,38 @@
 #include <cmath>
 
 const char *vertexShaderSource = R"glsl(
-    #version 150 core
+  #version 150 core
 
-    in vec2 position;
-    in vec3 color;
-    in vec2 texcoord;
+  in vec2 position;
+  in vec3 color;
+  in vec2 texcoord;
 
-    out vec3 Color;
-    out vec2 Texcoord;
+  out vec3 Color;
+  out vec2 Texcoord;
 
-    void main() {
-        gl_Position = vec4(position, 0.0, 1.0);
-        Color = color;
-        Texcoord = texcoord;
-    }
+  void main() {
+    gl_Position = vec4(position, 0.0, 1.0);
+    Color = color;
+    Texcoord = texcoord;
+  }
 )glsl";
 
 const char *fragmentShaderSource = R"glsl(
-    #version 150 core
+  #version 150 core
 
-    in vec3 Color;
-    in vec2 Texcoord;
+  in vec3 Color;
+  in vec2 Texcoord;
 
-    out vec4 outColor;
+  out vec4 outColor;
 
-    uniform sampler2D tex;
+  uniform sampler2D texKitten;
+  uniform sampler2D texPuppy;
 
-    void main() {
-         outColor = texture(tex, Texcoord) * vec4(Color, 1.0);
-    }
+  void main() {
+    vec4 colKitten = texture(texKitten, Texcoord);
+    vec4 colPuppy = texture(texPuppy, Texcoord);
+    outColor = mix(colKitten, colPuppy, 0.5);
+  }
 )glsl";
 
 int main () {
@@ -70,7 +73,7 @@ int main () {
 
   // Defining vertex data
   float vertices[] = {
-//    Position      Color             Texcoords
+  //  Position      Color             Texcoords
       -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
        0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
@@ -94,15 +97,9 @@ int main () {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
-  GLuint tex;
-  glGenTextures(1, &tex);
 
-  glBindTexture(GL_TEXTURE_2D, tex);
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 
 //  glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -176,13 +173,40 @@ int main () {
   glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (2 * sizeof(GLfloat)));
   glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (5 * sizeof(GLfloat)));
 
-  // Load image of a kitten as a texture
+  // Set up & Load textures
+  GLuint textures[0];
+  glGenTextures(2, textures);
+
   int width, height;
-  unsigned char *image = SOIL_load_image("../resources/images/kitten.png", &width, &height, nullptr, SOIL_LOAD_RGB);
+  unsigned char *image;
 
+  // Load image of a kitten as a texture
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
+
+  image = SOIL_load_image("../resources/images/kitten.png", &width, &height, nullptr, SOIL_LOAD_RGB);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-
   SOIL_free_image_data(image);
+  glUniform1i(glGetUniformLocation(shaderProgram, "texKitten"), 0);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // Load image of a puppy as a texture
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+
+  image = SOIL_load_image("../resources/images/puppy.png", &width, &height, nullptr, SOIL_LOAD_RGB);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+  SOIL_free_image_data(image);
+  glUniform1i(glGetUniformLocation(shaderProgram, "texPuppy"), 1);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   GLenum err;
   std::string errorStr;
@@ -214,7 +238,7 @@ int main () {
     }
   }
 
-  glDeleteTextures(1, &tex);
+  glDeleteTextures(1, textures);
 
   glDeleteProgram(shaderProgram);
   glDeleteShader(fragmentShader);

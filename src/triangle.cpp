@@ -38,7 +38,8 @@ const char *fragmentShaderSource = R"glsl(
 
   void main() {
     if (Texcoord.y > 0.5) {
-      outColor = texture(texKitten, vec2(Texcoord.x, 1.0 - Texcoord.y));
+      outColor = texture(texKitten, vec2(Texcoord.x + sin(Texcoord.y * 50 + mod(timeDiff, 25)) / 15.0, 1.0 - Texcoord.y));
+//      outColor = texture(texKitten, vec2(Texcoord.x + sin(Texcoord.y * 60.0 + timeDiff * 2.0) / 30.0, 1.0 - Texcoord.y)) * vec4(0.7, 0.7, 1.0, 1.0);
     } else {
       outColor = texture(texKitten, Texcoord);
     }

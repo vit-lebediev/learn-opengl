@@ -11,6 +11,8 @@ include_directories("lib/glfw/include")
 add_subdirectory("lib/soil")
 include_directories("lib/soil/src")
 
+include_directories("lib/glm")
+
 # finding dependency on the system, must be PREINSTALLED
 find_library(GLEW GLEW)
 if (NOT GLEW)

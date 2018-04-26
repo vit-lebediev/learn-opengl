@@ -3,6 +3,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <SOIL.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 #include <cmath>
@@ -17,10 +20,12 @@ const char *vertexShaderSource = R"glsl(
   out vec3 Color;
   out vec2 Texcoord;
 
+  uniform mat4 trans;
+
   void main() {
-    gl_Position = vec4(position, 0.0, 1.0);
     Color = color;
     Texcoord = texcoord;
+    gl_Position = trans * vec4(position, 0.0, 1.0);
   }
 )glsl";
 
@@ -35,14 +40,12 @@ const char *fragmentShaderSource = R"glsl(
   uniform sampler2D texKitten;
   uniform sampler2D texPuppy;
   uniform float timeDiff;
+  uniform mat4 trans;
 
   void main() {
-    if (Texcoord.y > 0.5) {
-      outColor = texture(texKitten, vec2(Texcoord.x + sin(Texcoord.y * 50 + mod(timeDiff, 25)) / 15.0, 1.0 - Texcoord.y));
-//      outColor = texture(texKitten, vec2(Texcoord.x + sin(Texcoord.y * 60.0 + timeDiff * 2.0) / 30.0, 1.0 - Texcoord.y)) * vec4(0.7, 0.7, 1.0, 1.0);
-    } else {
-      outColor = texture(texKitten, Texcoord);
-    }
+    vec4 colKitten = texture(texKitten, Texcoord);
+    vec4 colPuppy = texture(texPuppy, Texcoord);
+    outColor = mix(colKitten, colPuppy, 0.6);
   }
 )glsl";
 
@@ -101,10 +104,6 @@ int main () {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
-
-
-
-
 //  glGenerateMipmap(GL_TEXTURE_2D);
 
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -156,26 +155,26 @@ int main () {
   // The location is a number depending on the order of the input definitions.
   // The first and only input position in this example will always have location 0.
   GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-  glEnableVertexAttribArray(posAttrib);
+  glEnableVertexAttribArray((GLuint) posAttrib);
 
   GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
-  glEnableVertexAttribArray(colAttrib);
+  glEnableVertexAttribArray((GLuint) colAttrib);
 
   GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
-  glEnableVertexAttribArray(texAttrib);
+  glEnableVertexAttribArray((GLuint) texAttrib);
 
   // This function also stores VBO currently bound to GL_ARRAY_BUFFER.
   // This means that with next invocation we can bind different buffer
   glVertexAttribPointer(
-      posAttrib, // reference to input
-      2,         // number of values for input (number of components of vec)
-      GL_FLOAT,  // type of each component
-      GL_FALSE,  // whether imput values should be normalized between -1.0 and 1.0
+      (GLuint) posAttrib,  // reference to input
+      2,                   // number of values for input (number of components of vec)
+      GL_FLOAT,            // type of each component
+      GL_FALSE,            // whether imput values should be normalized between -1.0 and 1.0
       7 * sizeof(GLfloat), // stride (length of each attributes sub-array, 0 - no data between data attributes)
       nullptr              // offset (how many bytes from the start of each attributes "sub-array" the attributes occur)
   );
-  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (2 * sizeof(GLfloat)));
-  glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (5 * sizeof(GLfloat)));
+  glVertexAttribPointer((GLuint) colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (2 * sizeof(GLfloat)));
+  glVertexAttribPointer((GLuint) texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (5 * sizeof(GLfloat)));
 
   // Set up & Load textures
   GLuint textures[0];
@@ -213,10 +212,18 @@ int main () {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 
+  // transformation matrices
+//  glm::mat4 trans = glm::mat4(1.0f);
+//  trans = glm::rotate(trans, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+  GLint uniTrans = glGetUniformLocation(shaderProgram, "trans");
+//  glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
+
+
   GLenum err;
   std::string errorStr;
 
-  GLuint timeDiff = glGetUniformLocation(shaderProgram, "timeDiff");
+  auto timeDiff = glGetUniformLocation(shaderProgram, "timeDiff");
 
   auto t_start = std::chrono::high_resolution_clock::now();
   while (!glfwWindowShouldClose(window)) {
@@ -225,6 +232,11 @@ int main () {
 
     auto t_now = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
+
+    // Calculate transformation
+    glm::mat4 trans = glm::mat4(1.0f);
+    trans = glm::rotate(trans, time * glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
 
     glUniform1f(timeDiff, time);
 

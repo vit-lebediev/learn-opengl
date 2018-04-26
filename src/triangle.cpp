@@ -217,13 +217,18 @@ int main () {
 
   // View transformation
   glm::mat4 view = glm::lookAt(
-      glm::vec3(1.2f, 1.2f, 1.2f),
-      glm::vec3(0.0f, 0.0f, 0.0f),
-      glm::vec3(0.0f, 0.0f, 1.0f)
+      glm::vec3(1.2f, 1.2f, 1.2f), // The position of camera (how 'far' the object will be)
+      glm::vec3(0.0f, 0.0f, 0.0f), // Point to be centered on-screen
+      glm::vec3(0.0f, 0.0f, 1.0f)  // up axis, or 'rotation' axis
   );
 
   // Projection transformation
-  glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 10.0f);
+  glm::mat4 proj = glm::perspective(
+      glm::radians(45.0f), // Vertical Field-of-view
+      800.0f / 600.0f,     // Acpect ratio of a screen
+      1.0f,                // near plane
+      10.0f                // far plane
+  );
 
 
   GLenum err;
@@ -243,6 +248,12 @@ int main () {
     // Model transformation
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, time * glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    view = glm::lookAt(
+        glm::vec3(2.0f + sin(time), 2.0f + sin(time), 2.0f + sin(time)), // The position of camera (how 'far' the object will be)
+        glm::vec3(0.0f, 0.0f, 0.0f), // Point to be centered on-screen
+        glm::vec3(0.0f, 0.0f, 1.0f)  // up axis, or 'rotation' axis
+    );
 
     glm::mat4 finalTrans = proj * view * model;
 

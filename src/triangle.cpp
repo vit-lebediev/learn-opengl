@@ -37,10 +37,11 @@ const char *fragmentShaderSource = R"glsl(
   uniform float timeDiff;
 
   void main() {
-    vec4 colKitten = texture(texKitten, Texcoord);
-    vec4 colPuppy = texture(texPuppy, Texcoord);
-    float factor = (sin(timeDiff * 4.0) + 1.0) / 2.0;
-    outColor = mix(colKitten, colPuppy, factor);
+    if (Texcoord.y > 0.5) {
+      outColor = texture(texKitten, vec2(Texcoord.x, 1.0 - Texcoord.y));
+    } else {
+      outColor = texture(texKitten, Texcoord);
+    }
   }
 )glsl";
 

@@ -34,12 +34,13 @@ const char *fragmentShaderSource = R"glsl(
 
   uniform sampler2D texKitten;
   uniform sampler2D texPuppy;
-  uniform float interFactor;
+  uniform float timeDiff;
 
   void main() {
     vec4 colKitten = texture(texKitten, Texcoord);
     vec4 colPuppy = texture(texPuppy, Texcoord);
-    outColor = mix(colKitten, colPuppy, interFactor);
+    float factor = (sin(timeDiff * 4.0) + 1.0) / 2.0;
+    outColor = mix(colKitten, colPuppy, factor);
   }
 )glsl";
 
@@ -213,7 +214,7 @@ int main () {
   GLenum err;
   std::string errorStr;
 
-  GLuint interFactor = glGetUniformLocation(shaderProgram, "interFactor");
+  GLuint timeDiff = glGetUniformLocation(shaderProgram, "timeDiff");
 
   auto t_start = std::chrono::high_resolution_clock::now();
   while (!glfwWindowShouldClose(window)) {
@@ -221,9 +222,9 @@ int main () {
     glfwPollEvents();
 
     auto t_now = std::chrono::high_resolution_clock::now();
-    float timeDiff = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
+    float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
 
-    glUniform1f(interFactor, sin(timeDiff * 4.0f) / 2 + 0.5f);
+    glUniform1f(timeDiff, time);
 
     // Clear the screen to black
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

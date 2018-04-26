@@ -20,14 +20,12 @@ const char *vertexShaderSource = R"glsl(
   out vec3 Color;
   out vec2 Texcoord;
 
-  uniform mat4 model;
-  uniform mat4 view;
-  uniform mat4 proj;
+  uniform mat4 finalTrans;
 
   void main() {
     Color = color;
     Texcoord = texcoord;
-    gl_Position = proj * view * model * vec4(position, 0.0, 1.0);
+    gl_Position = finalTrans * vec4(position, 0.0, 1.0);
   }
 )glsl";
 
@@ -215,11 +213,7 @@ int main () {
 
   // Transformation matrices
   // Model transformation
-//  glm::mat4 model = glm::mat4(1.0f);
-//  model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-  GLint uniModel = glGetUniformLocation(shaderProgram, "model");
-//  glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(trans));
+  GLint uniFinalTrans = glGetUniformLocation(shaderProgram, "finalTrans");
 
   // View transformation
   glm::mat4 view = glm::lookAt(
@@ -227,13 +221,9 @@ int main () {
       glm::vec3(0.0f, 0.0f, 0.0f),
       glm::vec3(0.0f, 0.0f, 1.0f)
   );
-  GLint uniView = glGetUniformLocation(shaderProgram, "view");
-  glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
 
   // Projection transformation
   glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 10.0f);
-  GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
-  glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 
 
   GLenum err;
@@ -250,9 +240,13 @@ int main () {
     float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
 
     // Calculate transformation
+    // Model transformation
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, time * glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
+
+    glm::mat4 finalTrans = proj * view * model;
+
+    glUniformMatrix4fv(uniFinalTrans, 1, GL_FALSE, glm::value_ptr(finalTrans));
 
     glUniform1f(timeDiff, time);
 

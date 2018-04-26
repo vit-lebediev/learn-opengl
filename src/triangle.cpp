@@ -20,12 +20,14 @@ const char *vertexShaderSource = R"glsl(
   out vec3 Color;
   out vec2 Texcoord;
 
-  uniform mat4 trans;
+  uniform mat4 model;
+  uniform mat4 view;
+  uniform mat4 proj;
 
   void main() {
     Color = color;
     Texcoord = texcoord;
-    gl_Position = trans * vec4(position, 0.0, 1.0);
+    gl_Position = proj * view * model * vec4(position, 0.0, 1.0);
   }
 )glsl";
 
@@ -40,7 +42,6 @@ const char *fragmentShaderSource = R"glsl(
   uniform sampler2D texKitten;
   uniform sampler2D texPuppy;
   uniform float timeDiff;
-  uniform mat4 trans;
 
   void main() {
     vec4 colKitten = texture(texKitten, Texcoord);
@@ -212,12 +213,27 @@ int main () {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 
-  // transformation matrices
-//  glm::mat4 trans = glm::mat4(1.0f);
-//  trans = glm::rotate(trans, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+  // Transformation matrices
+  // Model transformation
+//  glm::mat4 model = glm::mat4(1.0f);
+//  model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-  GLint uniTrans = glGetUniformLocation(shaderProgram, "trans");
-//  glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
+  GLint uniModel = glGetUniformLocation(shaderProgram, "model");
+//  glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(trans));
+
+  // View transformation
+  glm::mat4 view = glm::lookAt(
+      glm::vec3(1.2f, 1.2f, 1.2f),
+      glm::vec3(0.0f, 0.0f, 0.0f),
+      glm::vec3(0.0f, 0.0f, 1.0f)
+  );
+  GLint uniView = glGetUniformLocation(shaderProgram, "view");
+  glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
+
+  // Projection transformation
+  glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 10.0f);
+  GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
+  glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 
 
   GLenum err;
@@ -234,9 +250,9 @@ int main () {
     float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
 
     // Calculate transformation
-    glm::mat4 trans = glm::mat4(1.0f);
-    trans = glm::rotate(trans, time * glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::rotate(model, time * glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
 
     glUniform1f(timeDiff, time);
 

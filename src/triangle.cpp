@@ -238,28 +238,33 @@ int main () {
 
   auto t_start = std::chrono::high_resolution_clock::now();
 
-  GLfloat currentRotAngle = 0.0f;
+  auto t_prev = std::chrono::high_resolution_clock::now();
   GLfloat rotationSpeed = 0.0f;
+  GLfloat angle = -45.0f;
   while (!glfwWindowShouldClose(window)) {
     glfwSwapBuffers(window);
     glfwPollEvents();
 
     auto t_now = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
+    float td = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_prev).count();
+    t_prev = t_now;
 
     // Calculate transformation
     // Model transformation
     glm::mat4 model = glm::mat4(1.0f);
 
-    rotationSpeed = (rotationSpeed - 0.1f >= 0.0f) ? rotationSpeed - 0.1f : 0.0f;
-    currentRotAngle = (currentRotAngle + rotationSpeed >= 360.0f) ? currentRotAngle + rotationSpeed - 360.0f : currentRotAngle + rotationSpeed;
-    model = glm::rotate(model, glm::radians(rotationSpeed) + glm::radians(currentRotAngle), glm::vec3(1.0f, 0.0f, 0.0f));
-//    glm::mat4 finalTrans = proj * view * model;
-    glm::mat4 finalTrans = model;
+    model = glm::rotate(
+        model,
+        glm::radians(angle),
+        glm::vec3(1.0f, 0.0f, 0.0f)
+    );
 
-    glUniformMatrix4fv(uniFinalTrans, 1, GL_FALSE, glm::value_ptr(finalTrans));
+    glUniformMatrix4fv(uniFinalTrans, 1, GL_FALSE, glm::value_ptr(model));
 
-    glUniform1f(timeDiff, time);
+    rotationSpeed /= 1.0f + td;
+    angle += 5 * rotationSpeed * td;
+
+    glUniform1f(timeDiff, td);
 
     // Clear the screen to black
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -268,7 +273,7 @@ int main () {
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) rotationSpeed = 10.0f;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) rotationSpeed = 180.0f;
 
     // check for errors
     while ((err = glGetError()) != GL_NO_ERROR) {

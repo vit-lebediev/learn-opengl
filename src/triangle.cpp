@@ -217,14 +217,14 @@ int main () {
 
   // View transformation
   glm::mat4 view = glm::lookAt(
-      glm::vec3(1.2f, 1.2f, 1.2f), // The position of camera (how 'far' the object will be)
+      glm::vec3(1.0f, 1.0f, 1.0f), // The position of camera (how 'far' the object will be)
       glm::vec3(0.0f, 0.0f, 0.0f), // Point to be centered on-screen
       glm::vec3(0.0f, 0.0f, 1.0f)  // up axis, or 'rotation' axis
   );
 
   // Projection transformation
   glm::mat4 proj = glm::perspective(
-      glm::radians(45.0f), // Vertical Field-of-view
+      glm::radians(60.0f), // Vertical Field-of-view
       800.0f / 600.0f,     // Acpect ratio of a screen
       1.0f,                // near plane
       10.0f                // far plane
@@ -237,6 +237,9 @@ int main () {
   auto timeDiff = glGetUniformLocation(shaderProgram, "timeDiff");
 
   auto t_start = std::chrono::high_resolution_clock::now();
+
+  GLfloat currentRotAngle = 0.0f;
+  GLfloat rotationSpeed = 0.0f;
   while (!glfwWindowShouldClose(window)) {
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -247,18 +250,12 @@ int main () {
     // Calculate transformation
     // Model transformation
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, time * glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
-//    GLfloat s = sin(time * 5.0f) * 0.25f + 0.75f;
-//    model = glm::scale(model, glm::vec3(s, s, s));
-
-    view = glm::lookAt(
-        glm::vec3(2.0f + sin(time), 2.0f + sin(time), 2.0f + sin(time)), // The position of camera (how 'far' the object will be)
-        glm::vec3(0.0f, 0.0f, 0.0f), // Point to be centered on-screen
-        glm::vec3(0.0f, 0.0f, 1.0f)  // up axis, or 'rotation' axis
-    );
-
-    glm::mat4 finalTrans = proj * view * model;
+    rotationSpeed = (rotationSpeed - 0.1f >= 0.0f) ? rotationSpeed - 0.1f : 0.0f;
+    currentRotAngle = (currentRotAngle + rotationSpeed >= 360.0f) ? currentRotAngle + rotationSpeed - 360.0f : currentRotAngle + rotationSpeed;
+    model = glm::rotate(model, glm::radians(rotationSpeed) + glm::radians(currentRotAngle), glm::vec3(1.0f, 0.0f, 0.0f));
+//    glm::mat4 finalTrans = proj * view * model;
+    glm::mat4 finalTrans = model;
 
     glUniformMatrix4fv(uniFinalTrans, 1, GL_FALSE, glm::value_ptr(finalTrans));
 
@@ -271,6 +268,7 @@ int main () {
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) rotationSpeed = 10.0f;
 
     // check for errors
     while ((err = glGetError()) != GL_NO_ERROR) {

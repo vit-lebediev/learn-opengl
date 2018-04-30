@@ -249,6 +249,9 @@ int main () {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, time * glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
+//    GLfloat s = sin(time * 5.0f) * 0.25f + 0.75f;
+//    model = glm::scale(model, glm::vec3(s, s, s));
+
     view = glm::lookAt(
         glm::vec3(2.0f + sin(time), 2.0f + sin(time), 2.0f + sin(time)), // The position of camera (how 'far' the object will be)
         glm::vec3(0.0f, 0.0f, 0.0f), // Point to be centered on-screen

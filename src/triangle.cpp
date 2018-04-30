@@ -13,7 +13,7 @@
 const char *vertexShaderSource = R"glsl(
   #version 150 core
 
-  in vec2 position;
+  in vec3 position;
   in vec3 color;
   in vec2 texcoord;
 
@@ -25,7 +25,7 @@ const char *vertexShaderSource = R"glsl(
   void main() {
     Color = color;
     Texcoord = texcoord;
-    gl_Position = finalTrans * vec4(position, 0.0, 1.0);
+    gl_Position = finalTrans * vec4(position, 1.0);
   }
 )glsl";
 
@@ -44,7 +44,7 @@ const char *fragmentShaderSource = R"glsl(
   void main() {
     vec4 colKitten = texture(texKitten, Texcoord);
     vec4 colPuppy = texture(texPuppy, Texcoord);
-    outColor = mix(colKitten, colPuppy, 0.6);
+    outColor = vec4(Color, 1.0) * mix(colKitten, colPuppy, 0.6);
   }
 )glsl";
 
@@ -65,6 +65,8 @@ int main () {
   glewExperimental = GL_TRUE;
   glewInit();
 
+  glEnable(GL_DEPTH_TEST);
+
   GLuint vao; // Vertex Array Object
   glGenVertexArrays(1, &vao);
 
@@ -78,19 +80,63 @@ int main () {
   glBindVertexArray(vao);
 
   // Defining vertex data
-  float vertices[] = {
-  //  Position      Color             Texcoords
-      -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
-       0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
-       0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
-      -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f  // Bottom-left
+  GLfloat squareVertices[] = {
+  //  X       Y      Z     R     G     B     U     V
+      -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
+       0.5f,  0.5f,  0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // Top-right
+       0.5f, -0.5f,  0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
+      -0.5f, -0.5f,  0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f  // Bottom-left
+  };
+
+  GLfloat cubeVertices[] = {
+      -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+       0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+       0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+       0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+      -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+      -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+
+      -0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+       0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+       0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+       0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+      -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+      -0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+
+      -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+      -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+      -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+      -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+      -0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+      -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+
+       0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+       0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+       0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+       0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+       0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+       0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+
+      -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+       0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+       0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+       0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+      -0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+      -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+
+      -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+       0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+       0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+       0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+      -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+      -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f
   };
 
   GLuint vbo; // Vertex Buffer Object
   glGenBuffers(1, &vbo); // Generate 1 buffer
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo); // Bind Vertex Buffer Object
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Load vertex data to binded buffer
+  glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW); // Load vertex data to binded buffer
 
   GLuint ebo; // Element Buffer Object
   glGenBuffers(1, &ebo);
@@ -166,14 +212,14 @@ int main () {
   // This means that with next invocation we can bind different buffer
   glVertexAttribPointer(
       (GLuint) posAttrib,  // reference to input
-      2,                   // number of values for input (number of components of vec)
+      3,                   // number of values for input (number of components of vec)
       GL_FLOAT,            // type of each component
       GL_FALSE,            // whether imput values should be normalized between -1.0 and 1.0
-      7 * sizeof(GLfloat), // stride (length of each attributes sub-array, 0 - no data between data attributes)
+      8 * sizeof(GLfloat), // stride (length of each attributes sub-array, 0 - no data between data attributes)
       nullptr              // offset (how many bytes from the start of each attributes "sub-array" the attributes occur)
   );
-  glVertexAttribPointer((GLuint) colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (2 * sizeof(GLfloat)));
-  glVertexAttribPointer((GLuint) texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void *) (5 * sizeof(GLfloat)));
+  glVertexAttribPointer((GLuint) colAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *) (3 * sizeof(GLfloat)));
+  glVertexAttribPointer((GLuint) texAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *) (6 * sizeof(GLfloat)));
 
   // Set up & Load textures
   GLuint textures[0];
@@ -217,7 +263,7 @@ int main () {
 
   // View transformation
   glm::mat4 view = glm::lookAt(
-      glm::vec3(1.0f, 1.0f, 1.0f), // The position of camera (how 'far' the object will be)
+      glm::vec3(1.2f, 1.2f, 1.2f), // The position of camera (how 'far' the object will be)
       glm::vec3(0.0f, 0.0f, 0.0f), // Point to be centered on-screen
       glm::vec3(0.0f, 0.0f, 1.0f)  // up axis, or 'rotation' axis
   );
@@ -239,13 +285,12 @@ int main () {
   auto t_start = std::chrono::high_resolution_clock::now();
 
   auto t_prev = std::chrono::high_resolution_clock::now();
-  GLfloat rotationSpeed = 0.0f;
-  GLfloat angle = -45.0f;
   while (!glfwWindowShouldClose(window)) {
     glfwSwapBuffers(window);
     glfwPollEvents();
 
     auto t_now = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_start - t_prev).count();
     float td = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_prev).count();
     t_prev = t_now;
 
@@ -255,25 +300,24 @@ int main () {
 
     model = glm::rotate(
         model,
-        glm::radians(angle),
-        glm::vec3(1.0f, 0.0f, 0.0f)
+        glm::radians(time * -120.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f)
     );
 
-    glUniformMatrix4fv(uniFinalTrans, 1, GL_FALSE, glm::value_ptr(model));
+    glm::mat4 finalTrans = proj * view * model;
 
-    rotationSpeed /= 1.0f + td;
-    angle += 5 * rotationSpeed * td;
+    glUniformMatrix4fv(uniFinalTrans, 1, GL_FALSE, glm::value_ptr(finalTrans));
 
     glUniform1f(timeDiff, td);
 
     // Clear the screen to black
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+//    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) rotationSpeed = 180.0f;
 
     // check for errors
     while ((err = glGetError()) != GL_NO_ERROR) {

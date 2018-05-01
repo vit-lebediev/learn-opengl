@@ -21,9 +21,10 @@ const char *vertexShaderSource = R"glsl(
   out vec2 Texcoord;
 
   uniform mat4 finalTrans;
+  uniform vec3 overrideColor;
 
   void main() {
-    Color = color;
+    Color = overrideColor * color;
     Texcoord = texcoord;
     gl_Position = finalTrans * vec4(position, 1.0);
   }
@@ -66,6 +67,7 @@ int main () {
   glewInit();
 
   glEnable(GL_DEPTH_TEST);
+
 
   GLuint vao; // Vertex Array Object
   glGenVertexArrays(1, &vao);
@@ -129,7 +131,15 @@ int main () {
        0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
        0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
       -0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-      -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f
+      -0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+
+      // Floor vertices
+      -1.0f, -1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+       1.0f, -1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+       1.0f,  1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+       1.0f,  1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+      -1.0f,  1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+      -1.0f, -1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f
   };
 
   GLuint vbo; // Vertex Buffer Object
@@ -257,13 +267,15 @@ int main () {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 
+  GLint uniOverrideColor = glGetUniformLocation(shaderProgram, "overrideColor");
+
   // Transformation matrices
   // Model transformation
   GLint uniFinalTrans = glGetUniformLocation(shaderProgram, "finalTrans");
 
   // View transformation
   glm::mat4 view = glm::lookAt(
-      glm::vec3(1.2f, 1.2f, 1.2f), // The position of camera (how 'far' the object will be)
+      glm::vec3(1.8f, 1.8f, 1.2f), // The position of camera (how 'far' the object will be)
       glm::vec3(0.0f, 0.0f, 0.0f), // Point to be centered on-screen
       glm::vec3(0.0f, 0.0f, 1.0f)  // up axis, or 'rotation' axis
   );
@@ -300,8 +312,8 @@ int main () {
 
     model = glm::rotate(
         model,
-        glm::radians(time * -120.0f),
-        glm::vec3(0.0f, 0.0f, 1.0f)
+        glm::radians(time * -120.0f), // angle (rotation speed)
+        glm::vec3(0.0f, 0.0f, 1.0f) // v (angle velocity, or 'rotation direction')
     );
 
     glm::mat4 finalTrans = proj * view * model;
@@ -311,11 +323,43 @@ int main () {
     glUniform1f(timeDiff, td);
 
     // Clear the screen to black
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // Draw CatDog Cube
 //    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glEnable(GL_STENCIL_TEST);
+
+    // Draw floor
+    glStencilFunc(GL_ALWAYS, 1, 0xFF); // Set any stencil to 1
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilMask(0xFF); // Write to stencil buffer
+    glDepthMask(GL_FALSE); // Don't write to depth buffer
+    glClear(GL_STENCIL_BUFFER_BIT);
+
+    glDrawArrays(GL_TRIANGLES, 36, 6);
+
+    // Draw cube reflection
+    glStencilFunc(GL_EQUAL, 1, 0xFF); // Pass test if stencil value is 1
+    glStencilMask(0x00); // Don't write anything to stencil buffer
+    glDepthMask(GL_TRUE); // Write to depth buffer
+
+    model = glm::scale(
+        glm::translate(model, glm::vec3(0, 0, -1)),
+        glm::vec3(1, 1, -1)
+    );
+
+    finalTrans = proj * view * model;
+
+    glUniformMatrix4fv(uniFinalTrans, 1, GL_FALSE, glm::value_ptr(finalTrans));
+
+    glUniform3f(uniOverrideColor, 0.3f, 0.3f, 0.3f);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glUniform3f(uniOverrideColor, 1.0f, 1.0f, 1.0f);
+
+    glDisable(GL_STENCIL_TEST);
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, GL_TRUE);
 

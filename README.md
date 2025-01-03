@@ -1,3 +1,5 @@
+Following this [guide](https://open.gl/)
+
 GLFW Compile&Build: [Guide](http://www.glfw.org/docs/latest/compile_guide.html)
 
 Command to build test.cpp: `g++ test.cpp -o test -I /usr/local/include -L /usr/local/lib -lglfw3 -framework Cocoa -framework OpenGL -framework IOKit -framework CoreVideo`  
